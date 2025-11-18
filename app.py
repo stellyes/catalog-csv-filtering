@@ -65,8 +65,13 @@ def transform_row(row):
     # Check Strain Prevalence (Classification) validity
     classification = row.get("Strain Prevalence", "").strip().lower()
     valid_classifications = ["sativa", "indica", "hybrid", "s/i", "i/s", "cbd"]
+    
+    # If classification is empty or invalid, skip the row
+    if not classification:
+        return None, "Empty Classification (Strain Prevalence)"
+    
     if classification not in valid_classifications:
-        return None, f"Invalid Classification: {classification}"
+        return None, f"Invalid Classification: '{row.get('Strain Prevalence', '')}' (must be: sativa, indica, hybrid, s/i, i/s, or cbd)"
     
     # Get Category for conditional checks
     category = row.get("Product Type", "").strip()
