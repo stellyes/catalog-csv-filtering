@@ -127,6 +127,10 @@ def transform_row(row):
     classification = row.get("Classification", "").strip().lower()
     valid_classifications = ["sativa", "indica", "hybrid", "s/i", "i/s", "cbd"]
     
+    # Handle "NONE" classification - set to empty string
+    if classification == "none":
+        classification = ""
+    
     # Allow empty classification ONLY if we have a valid (non-URL) product name
     # If classification exists but is invalid, reject the row
     if classification and classification not in valid_classifications:
@@ -139,16 +143,17 @@ def transform_row(row):
     if not category:
         return None, "Empty Category"
     
-    # Units in Package (from Doses)
+    # Units in Package (from Doses) - if empty, set to 1
     doses = row.get("Doses", "").strip()
-    units_in_package = doses if doses else "N/A"
     if not doses:
-        return None, "Empty Units in Package (Doses)"
+        units_in_package = "1"
+    else:
+        units_in_package = doses
     
-    # Price check
+    # Price check - if empty, set to $0.01
     price_raw = row.get("Price/Tier", "").strip()
     if not price_raw:
-        return None, "Empty Price"
+        price_raw = "0.01"
     
     # THC/CBD checks for specific categories
     needs_thc_cbd = category in ["Edibles", "Topicals", "Tinctures"]
@@ -171,7 +176,8 @@ def transform_row(row):
     output["Subcategory"] = "None"
     output["Brand"] = row.get("Brand", "")
     output["Strain"] = "Undefined"
-    output["Strain Prevalence"] = row.get("Classification", "")  # Fixed: Classification -> Strain Prevalence
+    # Use original classification value from input, or empty string if it was "none"
+    output["Strain Prevalence"] = row.get("Classification", "") if classification else ""
     output["Quality Line"] = "Bronze"
     output["Product Description"] = row.get("Description", "")
     output["Instructions"] = "None"
