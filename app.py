@@ -178,7 +178,7 @@ def transform_row(row):
     output["Strain"] = "Undefined"
     output["Strain Prevalence"] = row.get("Classification", "") if classification else ""
     output["Quality Line"] = "Bronze"
-    output["Product Description"] = row.get("Description", "")
+    output["Product Description"] = row.get("Product Description", "")
     output["Instructions"] = "None"
     
     flavors = row.get("Flavors", "")
