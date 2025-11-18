@@ -150,6 +150,10 @@ def transform_row(row):
     
     return output, None
 
+def normalize_headers(row):
+    """Normalize column headers by stripping whitespace."""
+    return {key.strip(): value for key, value in row.items()}
+
 def process_csv(uploaded_file):
     """Process CSV with all transformations and filters."""
     
@@ -169,7 +173,15 @@ def process_csv(uploaded_file):
     content = uploaded_file.read().decode('utf-8')
     reader = csv.DictReader(io.StringIO(content))
     
+    # Show available columns for debugging
+    first_row = None
     for idx, row in enumerate(reader, start=2):  # Start at 2 (row 1 is header)
+        if first_row is None:
+            first_row = row
+        
+        # Normalize column names
+        row = normalize_headers(row)
+        
         transformed, error = transform_row(row)
         if transformed:
             filtered_rows.append(transformed)
@@ -182,7 +194,10 @@ def process_csv(uploaded_file):
     writer.writeheader()
     writer.writerows(filtered_rows)
     
-    return output.getvalue(), len(filtered_rows), skipped_rows
+    # Return available columns from first row for debugging
+    available_cols = list(first_row.keys()) if first_row else []
+    
+    return output.getvalue(), len(filtered_rows), skipped_rows, available_cols
 
 # Streamlit UI
 st.set_page_config(page_title="CSV Product Transformer", page_icon="📊", layout="wide")
@@ -196,7 +211,13 @@ uploaded_file = st.file_uploader("Choose a CSV file", type=['csv'])
 if uploaded_file is not None:
     with st.spinner("Processing CSV..."):
         try:
-            output_csv, processed_count, skipped_rows = process_csv(uploaded_file)
+            output_csv, processed_count, skipped_rows, available_cols = process_csv(uploaded_file)
+            
+            # Display available columns for debugging
+            with st.expander("🔍 Debug: Available Columns in Your CSV"):
+                st.write("Column names found in your file:")
+                for col in available_cols:
+                    st.code(f'"{col}"')
             
             # Display results
             col1, col2 = st.columns(2)
