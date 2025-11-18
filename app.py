@@ -95,6 +95,13 @@ def combine_columns(row, columns, separator=","):
                 values.append(val)
     return separator.join(values) if values else ""
 
+def is_url(text):
+    """Check if text is a URL."""
+    if not text:
+        return False
+    text = str(text).strip().lower()
+    return text.startswith('http://') or text.startswith('https://') or text.startswith('www.')
+
 def transform_row(row):
     """Transform input row to output format with all mappings and conditions."""
     
@@ -112,15 +119,17 @@ def transform_row(row):
     if not final_name:
         return None, f"Both Menu Title and Name are empty"
     
+    # Check if name is a URL
+    if is_url(final_name):
+        return None, f"Name is a URL: {final_name}"
+    
     # Check Classification validity (input column is "Classification", output is "Strain Prevalence")
     classification = row.get("Classification", "").strip().lower()
     valid_classifications = ["sativa", "indica", "hybrid", "s/i", "i/s", "cbd"]
     
-    # If classification is empty or invalid, skip the row
-    if not classification:
-        return None, "Empty Classification"
-    
-    if classification not in valid_classifications:
+    # Allow empty classification ONLY if we have a valid (non-URL) product name
+    # If classification exists but is invalid, reject the row
+    if classification and classification not in valid_classifications:
         return None, f"Invalid Classification: '{row.get('Classification', '')}' (must be: sativa, indica, hybrid, s/i, i/s, or cbd)"
     
     # Get Category for conditional checks
