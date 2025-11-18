@@ -49,9 +49,12 @@ def combine_columns(row, columns, separator=","):
     """Combine multiple column values with separator, skip empty values."""
     values = []
     for col in columns:
-        val = row.get(col, "").strip()
-        if val:
-            values.append(val)
+        val = row.get(col, "")
+        # Convert to string if not already
+        if val is not None:
+            val = str(val).strip()
+            if val:
+                values.append(val)
     return separator.join(values) if values else ""
 
 def transform_row(row):
