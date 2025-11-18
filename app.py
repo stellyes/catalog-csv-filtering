@@ -270,8 +270,10 @@ def process_csv(uploaded_file):
                 filtered_rows[old_idx] = transformed
                 skipped_rows.append((idx, f"Duplicate Product ID (kept newer): {product_id}", transformed.get("Name", "N/A")))
             else:
+                # Check for likely duplicates (same name, brand, size, classification)
                 dup_key = (
                     transformed.get("Name", "").strip().lower(),
+                    transformed.get("Brand", "").strip().lower(),
                     transformed.get("Size", "").strip().lower(),
                     transformed.get("Strain Prevalence", "").strip().lower()
                 )
@@ -279,7 +281,7 @@ def process_csv(uploaded_file):
                 if dup_key in seen_duplicates and dup_key[0]:
                     old_idx = seen_duplicates[dup_key]
                     filtered_rows[old_idx] = transformed
-                    skipped_rows.append((idx, f"Likely duplicate (kept newer): {transformed.get('Name', 'N/A')}", transformed.get("Name", "N/A")))
+                    skipped_rows.append((idx, f"Likely duplicate (kept newer): {transformed.get('Name', 'N/A')} from {transformed.get('Brand', 'N/A')}", transformed.get("Name", "N/A")))
                 else:
                     current_idx = len(filtered_rows)
                     filtered_rows.append(transformed)
@@ -369,7 +371,7 @@ with st.expander("ℹ️ Transformation Rules"):
     ### Filters:
     - Removes products with PROMO, BOGO, or $ in name
     - Removes duplicate Product IDs (keeps latest)
-    - Removes likely duplicates (same name, size, classification)
+    - Removes likely duplicates (same name, **brand**, size, classification)
     
     ### Special Transformations:
     - Tags: Combines Attributes columns
