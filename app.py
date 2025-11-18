@@ -62,16 +62,16 @@ def transform_row(row):
     if not menu_title:
         return None, "Empty Menu Title"
     
-    # Check Strain Prevalence (Classification) validity
-    classification = row.get("Strain Prevalence", "").strip().lower()
+    # Check Classification validity (input column is "Classification", output is "Strain Prevalence")
+    classification = row.get("Classification", "").strip().lower()
     valid_classifications = ["sativa", "indica", "hybrid", "s/i", "i/s", "cbd"]
     
     # If classification is empty or invalid, skip the row
     if not classification:
-        return None, "Empty Classification (Strain Prevalence)"
+        return None, "Empty Classification"
     
     if classification not in valid_classifications:
-        return None, f"Invalid Classification: '{row.get('Strain Prevalence', '')}' (must be: sativa, indica, hybrid, s/i, i/s, or cbd)"
+        return None, f"Invalid Classification: '{row.get('Classification', '')}' (must be: sativa, indica, hybrid, s/i, i/s, or cbd)"
     
     # Get Category for conditional checks
     category = row.get("Product Type", "").strip()
@@ -109,7 +109,7 @@ def transform_row(row):
     output["Subcategory"] = "None"
     output["Brand"] = row.get("Brand", "")
     output["Strain"] = "Undefined"
-    output["Classification"] = row.get("Strain Prevalence", "")
+    output["Strain Prevalence"] = row.get("Classification", "")  # Fixed: Classification -> Strain Prevalence
     output["Quality Line"] = "Bronze"
     output["Product Description"] = row.get("Description", "")
     output["Instructions"] = "None"
@@ -164,7 +164,7 @@ def process_csv(uploaded_file):
     
     output_columns = [
         "External ID", "Name", "Product Type", "Category", "Subcategory",
-        "Brand", "Strain", "Classification", "Quality Line", "Product Description",
+        "Brand", "Strain", "Strain Prevalence", "Quality Line", "Product Description",
         "Instructions", "Attributes - Flavors", "Scents", "Tags", "Images",
         "Former Name", "Variant Name", "Size", "Units in Package", "Price",
         "Medical Price", "SKU", "THC / Unit", "CBD / Unit", "Infused Content",
@@ -259,7 +259,7 @@ with st.expander("ℹ️ Transformation Rules"):
     - Subtype → Product Type
     - Product Type → Category (required)
     - Brand → Brand
-    - Strain Prevalence → Classification (must be: sativa, indica, hybrid, s/i, i/s, or cbd)
+    - Classification → Strain Prevalence (must be: sativa, indica, hybrid, s/i, i/s, or cbd)
     
     ### Required Fields:
     - Name (Menu Title)
