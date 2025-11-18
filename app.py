@@ -168,7 +168,10 @@ def transform_row(row):
     
     # Make sure Product ID is converted to string and stripped
     product_id = row.get("Product ID", "")
-    output["External ID"] = str(product_id).strip() if product_id is not None else ""
+    if product_id is not None and product_id != "":
+        output["External ID"] = str(product_id).strip()
+    else:
+        output["External ID"] = ""
     
     output["Name"] = final_name
     output["Product Type"] = row.get("Subtype", "")
@@ -294,6 +297,16 @@ if uploaded_file is not None:
                 st.write("Column names found in your file:")
                 for col in available_cols:
                     st.code(f'"{col}"')
+            
+            # Show sample of first few External IDs
+            if processed_count > 0:
+                with st.expander("🔍 Debug: Sample External IDs"):
+                    st.write("First few External IDs from output (to verify they're populated):")
+                    sample_lines = output_csv.split('\n')[1:6]  # Skip header, show first 5 rows
+                    for i, line in enumerate(sample_lines, 1):
+                        if line.strip():
+                            external_id = line.split(',')[0] if ',' in line else line[:50]
+                            st.code(f"Row {i}: {external_id}")
             
             # Display results
             col1, col2 = st.columns(2)
