@@ -45,7 +45,33 @@ def extract_numeric_with_unit(value_str, unit="mg"):
         return f"{match.group()}{unit}"
     return "N/A"
 
-def combine_columns(row, columns, separator=","):
+def format_size(amount, uom):
+    """Format size value with unit abbreviations and clean numbers."""
+    # If UoM is not empty but Amount is, leave blank
+    if uom and not amount:
+        return ""
+    
+    # Clean the amount - remove trailing zeros and decimal points
+    if amount:
+        try:
+            num = float(amount)
+            # Format without trailing zeros
+            amount_str = f"{num:g}"
+        except (ValueError, TypeError):
+            amount_str = str(amount).strip()
+    else:
+        amount_str = ""
+    
+    # Abbreviate units
+    if uom:
+        uom = str(uom).strip()
+        uom_upper = uom.upper()
+        if uom_upper == "MILLIGRAMS":
+            uom = "mg"
+        elif uom_upper == "GRAMS":
+            uom = "g"
+    
+    return f"{amount_str} {uom}".strip() if (amount_str or uom) else ""
     """Combine multiple column values with separator, skip empty values."""
     values = []
     for col in columns:
@@ -60,10 +86,19 @@ def combine_columns(row, columns, separator=","):
 def transform_row(row):
     """Transform input row to output format with all mappings and conditions."""
     
-    # Check Menu Title is not empty
-    menu_title = row.get("Menu Title", "").strip()
-    if not menu_title:
-        return None, "Empty Menu Title"
+    # Check Menu Title OR Name (use whichever is populated)
+    menu_title_raw = row.get("Menu Title", "")
+    name_raw = row.get("Name", "")
+    
+    # Convert to strings and strip
+    menu_title = str(menu_title_raw).strip() if menu_title_raw else ""
+    name = str(name_raw).strip() if name_raw else ""
+    
+    # Use Menu Title if available, otherwise use Name
+    final_name = menu_title if menu_title else name
+    
+    if not final_name:
+        return None, f"Both Menu Title and Name are empty"
     
     # Check Classification validity (input column is "Classification", output is "Strain Prevalence")
     classification = row.get("Classification", "").strip().lower()
@@ -105,8 +140,11 @@ def transform_row(row):
     # Build output row
     output = {}
     
-    output["External ID"] = row.get("Product ID", "")
-    output["Name"] = menu_title
+    # Make sure Product ID is converted to string and stripped
+    product_id = row.get("Product ID", "")
+    output["External ID"] = str(product_id).strip() if product_id is not None else ""
+    
+    output["Name"] = final_name
     output["Product Type"] = row.get("Subtype", "")
     output["Category"] = category
     output["Subcategory"] = "None"
@@ -117,7 +155,9 @@ def transform_row(row):
     output["Product Description"] = row.get("Description", "")
     output["Instructions"] = "None"
     
-    flavors = row.get("Flavors", "").strip()
+    flavors = row.get("Flavors", "")
+    if flavors is not None:
+        flavors = str(flavors).strip()
     output["Attributes - Flavors"] = flavors if flavors else "None"
     
     output["Scents"] = "N/A"
@@ -133,9 +173,10 @@ def transform_row(row):
     output["Former Name"] = "N/A"
     output["Variant Name"] = "N/A"
     
-    amount = row.get("Amount", "").strip()
-    uom = row.get("UoM", "").strip()
-    output["Size"] = f"{amount} {uom}".strip() if amount or uom else ""
+    # Use new format_size function
+    amount = row.get("Amount", "")
+    uom = row.get("UoM", "")
+    output["Size"] = format_size(amount, uom)
     
     output["Units in Package"] = units_in_package
     output["Price"] = format_price(price_raw)
