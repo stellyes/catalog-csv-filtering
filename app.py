@@ -166,10 +166,12 @@ def transform_row(row):
     # Build output row
     output = {}
     
+    # Debug: Check what we're getting for Product ID
+    product_id_raw = row.get("Product ID", "")
+    
     # Make sure Product ID is converted to string and stripped
-    product_id = row.get("Product ID", "")
-    if product_id is not None and product_id != "":
-        output["External ID"] = str(product_id).strip()
+    if product_id_raw is not None and str(product_id_raw).strip() != "":
+        output["External ID"] = str(product_id_raw).strip()
     else:
         output["External ID"] = ""
     
@@ -230,8 +232,14 @@ def transform_row(row):
     return output, None
 
 def normalize_headers(row):
-    """Normalize column headers by stripping whitespace."""
-    return {key.strip(): value for key, value in row.items()}
+    """Normalize column headers by stripping whitespace and handling BOM."""
+    normalized = {}
+    for key, value in row.items():
+        if key:
+            # Remove BOM and strip whitespace
+            clean_key = key.replace('\ufeff', '').strip()
+            normalized[clean_key] = value
+    return normalized
 
 def process_csv(uploaded_file):
     """Process CSV with all transformations and filters."""
@@ -254,18 +262,27 @@ def process_csv(uploaded_file):
     
     # Show available columns for debugging
     first_row = None
+    row_count = 0
+    
     for idx, row in enumerate(reader, start=2):  # Start at 2 (row 1 is header)
+        row_count += 1
+        
         if first_row is None:
             first_row = row
         
         # Normalize column names
         row = normalize_headers(row)
         
+        # Debug first row to see Product ID
+        if row_count == 1:
+            product_id_debug = row.get("Product ID", "NOT_FOUND")
+            st.write(f"DEBUG - First row Product ID: '{product_id_debug}'")
+        
         transformed, error = transform_row(row)
         if transformed:
             filtered_rows.append(transformed)
         else:
-            skipped_rows.append((idx, error, row.get("Menu Title", "N/A")))
+            skipped_rows.append((idx, error, row.get("Menu Title", row.get("Name", "N/A"))))
     
     # Create output CSV in memory
     output = io.StringIO()
