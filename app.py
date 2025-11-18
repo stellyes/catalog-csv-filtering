@@ -232,12 +232,12 @@ def transform_row(row):
     return output, None
 
 def normalize_headers(row):
-    """Normalize column headers by stripping whitespace and handling BOM."""
+    """Normalize column headers by stripping whitespace, BOM, and extra quotes."""
     normalized = {}
     for key, value in row.items():
         if key:
-            # Remove BOM and strip whitespace
-            clean_key = key.replace('\ufeff', '').strip()
+            # Remove BOM, strip whitespace, and remove extra quotes
+            clean_key = key.replace('\ufeff', '').strip().strip('"').strip("'")
             normalized[clean_key] = value
     return normalized
 
